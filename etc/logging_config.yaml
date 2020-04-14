@@ -1,0 +1,26 @@
+version: 1
+formatters:
+  brief:
+    format: '%(message)s'
+  default:
+#    format: "%(asctime)s %(filename)12s:%(lineno)3d\t%(levelname)-8s %(name)-15s %(message)s"
+    format: "%(asctime)s %(filename)13s:%(lineno)-4d\t%(levelname)-8s %(message)s"
+    datefmt: '%Y-%m-%d %H:%M:%S'
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: default
+    level: DEBUG
+    stream: ext://sys.stderr
+  file_handler:
+    class: logging.FileHandler
+    formatter: default
+    level: DEBUG
+    filename: '../logs/eci-output.log'
+loggers:
+  ewps:
+    handlers: [console, file_handler]
+    level: DEBUG
+  flask:
+    handlers: [console, file_handler]
+    level: ERROR
