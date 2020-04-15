@@ -8,7 +8,9 @@ from redis import Redis
 import rq
 from rq.job import Job
 from rq.registry import StartedJobRegistry
-from eci_worker.anomalies import example, cpu_overload
+from eci_worker.anomalies import example, cpu_overload, memeater_v2
+import psutil
+import platform
 
 etc_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc'))
 log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'logs'))
@@ -37,7 +39,38 @@ log = logging.getLogger("eci")
 # Redis and rq
 # r_connection = Redis.from_url('redis://')
 r_connection = Redis()
-queue = rq.Queue('test', connection=r_connection)
+queue = rq.Queue('test', connection=r_connection)  # TODO create 3 priority queues and make them selectable from REST call
+
+
+class NodeDescriptor(Resource):
+    def get(self):
+        uname = platform.uname()
+        cpufreq = psutil.cpu_freq()
+        svmem = psutil.virtual_memory()
+        swap = psutil.swap_memory()
+        disk_usage = psutil.disk_usage('/').total
+        response = jsonify({
+            'system': uname.system,
+            'node': uname.node,
+            'release': uname.release,
+            'version': uname.version,
+            'machine': uname.machine,
+            'processor': {
+                'type': uname.processor,
+                'cores_physical':  psutil.cpu_count(logical=False),
+                'cores_logical':  psutil.cpu_count(logical=True),
+                'frequency_max': cpufreq.max,
+                'frequency_min': cpufreq.min,
+                'frequency_current': cpufreq.current,
+            },
+            'memory': {
+                'total': svmem.total,
+                'swap': swap.total
+            },
+            'disk': disk_usage,
+        })
+        response.status_code = 200
+        return response
 
 
 class GetLogs(Resource):
@@ -93,6 +126,15 @@ class CPUOverload(Resource):
         return response
 
 
+class MemEater(Resource):
+    def get(self):
+        settings = {'unit': 'gb', 'multiplier': 1, 'iteration': 2, 'time_out': 20}
+        job = queue.enqueue(memeater_v2, **settings)
+        response = jsonify({"job_id": job.get_id()})
+        response.status_code = 201
+        return response
+
+
 class GetAllTaks(Resource):
     def get(self):
         registry = StartedJobRegistry('test', connection=r_connection)
@@ -104,6 +146,8 @@ class GetAllTaks(Resource):
         return response
 
 
+api.add_resource(MemEater, '/memeater')
+api.add_resource(NodeDescriptor, '/node')
 api.add_resource(GetAllTaks, '/registry')
 api.add_resource(TaskExampleDetails, '/task/<job_id>')
 api.add_resource(TaskExample, '/task')
@@ -111,8 +155,6 @@ api.add_resource(CPUOverload, '/cpu_overload')
 api.add_resource(ListAnomalyInducers, '/inducers')
 api.add_resource(AnomalyInducer, '/inducers/<anomaly_id>')
 api.add_resource(GetLogs, '/logs')
-
-
 
 
 """

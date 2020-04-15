@@ -23,4 +23,4 @@ loggers:
     level: DEBUG
   flask:
     handlers: [console, file_handler]
-    level: ERROR
+    level: DEBUG
