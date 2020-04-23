@@ -8,7 +8,14 @@ import cpuinfo
 import numpy as np
 from sys import getsizeof
 import random
+from eci_worker.anomaly_loggers import setup_logger
+import uuid
 
+log_dummy = setup_logger('dummy')
+log_cpu = setup_logger('cpu_overload')
+log_memv2 = setup_logger('mem_eater')
+log_copy = setup_logger('copy')
+log_ddot = setup_logger('ddot')
 
 def example(seconds):
     job = get_current_job()
@@ -29,7 +36,10 @@ def dummy(stime=10):
     :param stime: Number of seconds to sleep
     :return:
     '''
+    uid = uuid.uuid4()
+    log_dummy.info("Started dummy with stime {} and uuid {}".format(stime, uid))
     time.sleep(stime)
+    log_dummy.info("Finished dummy with stime {} and uuid {}".format(stime, uid))
 
 
 def sim_work_cpu(cmd):
@@ -62,7 +72,8 @@ def cpu_overload(settings):
     :param half: Boolean to run on half the nodes
     :return:
     '''
-
+    uid = uuid.uuid4()
+    log_cpu.info("Started CPU overload with settings {} and uuid {}".format(settings, uid))
     half = settings['half']
     cpu_count = multiprocessing.cpu_count()
     if half:
@@ -72,6 +83,7 @@ def cpu_overload(settings):
         pool.map(sim_work_cpu_p, ["yes", ">", "/dev/null"] * cpu_count)
     except OSError:
         print("OS Error")
+    log_cpu.info("Finished CPU overload with settings {} and uuid {}".format(settings, uid))
 
 
 def memeater_v1(unit='mb', multiplier=1, time_out=10):
@@ -113,6 +125,7 @@ def memeater_v2(unit='gb', multiplier=1, iteration=2, time_out=20):
     :param iteration: How many iterations to perform and memory to allocate
     :param time_out: Seconds to wait until exiting
     '''
+    uid = uuid.uuid4()
 
     if unit == 'kb':
         n_unit = 1024
@@ -122,13 +135,15 @@ def memeater_v2(unit='gb', multiplier=1, iteration=2, time_out=20):
         n_unit = pow(1024, 3)
     else:
         n_unit = pow(1024, 2)
-    print("Memeater_v2 unit set to {} with multiplier {}, iteration {} and timeout {}".format(unit, multiplier,
-                                                                                              iteration, time_out))
+    log_memv2.info("Starting Memeaterv2 with unit {}, multiplier {}, iteration {}, time_out {} and uuid {}".format(
+        unit, multiplier, iteration, time_out, uid))
     b = []
     for it in range(0, iteration):
         a = "a" * (multiplier * n_unit)
         b.append(a)
         time.sleep(time_out)
+    log_memv2.info("Finised Memeaterv2 with unit {}, multiplier {}, iteration {}, time_out {} and uuid {}".format(
+        unit, multiplier, iteration, time_out, uid))
 
 
 def generate_large_file(unit='mb', multiplier=1):
@@ -147,11 +162,12 @@ def generate_large_file(unit='mb', multiplier=1):
     else:
         n_unit = 1024
     size = n_unit * multiplier
-    print('Generating file of size {} with {} and {}'.format(size, multiplier, unit))
+    log_copy.info('Generating file of size {} with {} and {}'.format(size, multiplier, unit))
     data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
     tmp_file = os.path.join(data_dir, 'large.blob')
     with open(tmp_file, "wb") as f:
         f.write("0".encode() * size)
+    log_copy.info('Finished generating file of size {} with {} and {}'.format(size, multiplier, unit))
 
 
 def copy(unit='kb', multiplier=1, remove=True, time_out=10):
@@ -163,6 +179,9 @@ def copy(unit='kb', multiplier=1, remove=True, time_out=10):
     :param time_out: Seconds to wait until mv operation
     :return:
     '''
+    uid = uuid.uuid4()
+    log_copy.info("Started copy with unti {}, multiplier {}, remove {}, time_out {} and uuid {}".format(
+        unit, multiplier, remove, time_out, uid))
     data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
     mv_dir_1 = os.path.join(data_dir, 'mv1')
     mv_dir_2 = os.path.join(data_dir, 'mv2')
@@ -181,6 +200,8 @@ def copy(unit='kb', multiplier=1, remove=True, time_out=10):
     time.sleep(time_out)
     if remove:
         os.remove(file_path)
+    log_copy.info("Finished copy with unit {}, multiplier {}, remove {}, time_out {} and uuid {}".format(
+        unit, multiplier, remove, time_out, uid))
 
 
 def ddot(iterations, time_out=1, modifiers=[0.9, 5, 2]):
@@ -192,8 +213,10 @@ def ddot(iterations, time_out=1, modifiers=[0.9, 5, 2]):
     :param modifiers: list of modifiers to be randomly chosen from at each iteration
     :return:
     '''
+    uid = uuid.uuid4()
     l2_cashe = int(cpuinfo.get_cpu_info()['l2_cache_size'])
-    print("L2 cache size detected as {}".format(l2_cashe))
+    log_ddot.info("Started ddot with iteration {}, time_out {}, modifiers {}, L2CacheSize {} and uuid {}".format(
+        iterations, time_out, modifiers, l2_cashe, uid))
 
     def compute_array_size(l2_cashe,
                            modifier=1):  # TODO find a more elegant solution
@@ -225,20 +248,22 @@ def ddot(iterations, time_out=1, modifiers=[0.9, 5, 2]):
     for it in range(1, iterations):
         modifier = random.choice(modifiers)
         asize = int(asize*modifier)
-        print("Modifier for iteration {} out of {} is {}".format(it, iterations, modifier))
+        log_ddot.info("Modifier of uuid {} for iteration {} out of {} is {}".format(uid, it, iterations, modifier))
         arr1 = np.random.rand(asize, asize)
         arr2 = np.random.rand(asize, asize)
         n_dot = np.dot(arr1, arr2)
         time.sleep(time_out)
         del arr1, arr2, n_dot
+    log_ddot.info("Finished ddot with iteration {}, time_out {}, modifiers {}, L2CacheSize {} and uuid {}".format(
+        iterations, time_out, modifiers, l2_cashe, uid))
 
 
 if __name__ == '__main__':
     # settings = {'half': True,
-    #             'time_out': 15}
+    #             'time_out': 4}
     # cpu_overload(settings)
     # memeater()
-    memeater_v2()
+    # memeater_v2(unit='gb', multiplier=1, iteration=2, time_out=20)
     # generate_large_file()
-    # copy(unit='kb', multiplier=4)
+    copy(unit='kb', multiplier=4)
     # ddot(iterations=10)
