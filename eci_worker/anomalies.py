@@ -9,6 +9,7 @@ import numpy as np
 from sys import getsizeof
 import random
 from eci_worker.anomaly_loggers import setup_logger
+from eci_worker.util import save_yaml, load_yaml
 import uuid
 
 log_dummy = setup_logger('dummy')
@@ -16,6 +17,7 @@ log_cpu = setup_logger('cpu_overload')
 log_memv2 = setup_logger('mem_eater')
 log_copy = setup_logger('copy')
 log_ddot = setup_logger('ddot')
+
 
 def example(seconds):
     job = get_current_job()
@@ -47,18 +49,19 @@ def sim_work_cpu(cmd):
     return subprocess.run(cmd, stdout=FNULL, stderr=subprocess.STDOUT)
 
 
-def sim_work_cpu_p(cmd, time_out=15):
+def sim_work_cpu_p(cmd):
     '''
     Starts a subprocess and runs it for the amount set
     :param cmd: command to run
     :param time_out: seconds to run command
     :return:
     '''
+    time_out = load_yaml('cpu_overload.yaml')  # TODO better fox for pool.map arg issue
     FNULL = open(os.devnull, 'w')
     p1 = subprocess.Popen(cmd, stdout=FNULL, stderr=subprocess.PIPE)
     try:
         outs, errs = p1.communicate(
-            timeout=time_out)  # will raise error and kill any process that runs longer than set by time_out
+            timeout=time_out['time_out'])  # will raise error and kill any process that runs longer than set by time_out
     except subprocess.TimeoutExpired as e:
         p1.kill()
         # outs, errs = p1.communicate()
@@ -73,17 +76,20 @@ def cpu_overload(settings):
     :return:
     '''
     uid = uuid.uuid4()
-    log_cpu.info("Started CPU overload with settings {} and uuid {}".format(settings, uid))
+    log_cpu.info("Started CPU_overload with settings {} and uuid {}".format(settings, uid))
     half = settings['half']
     cpu_count = multiprocessing.cpu_count()
     if half:
         cpu_count = int(cpu_count/2)
+    time_out = settings.get('time_out', 10)  # TODO better fox for pool.map arg issue
+    save_yaml('cpu_overload.yaml', {'time_out': time_out})
     pool = multiprocessing.Pool(processes=cpu_count)
     try:
         pool.map(sim_work_cpu_p, ["yes", ">", "/dev/null"] * cpu_count)
     except OSError:
-        print("OS Error")
-    log_cpu.info("Finished CPU overload with settings {} and uuid {}".format(settings, uid))
+        # print("OS Error")
+        pass
+    log_cpu.info("Finished CPU_overload with settings {} and uuid {}".format(settings, uid))
 
 
 def memeater_v1(unit='mb', multiplier=1, time_out=10):
@@ -135,7 +141,7 @@ def memeater_v2(unit='gb', multiplier=1, iteration=2, time_out=20):
         n_unit = pow(1024, 3)
     else:
         n_unit = pow(1024, 2)
-    log_memv2.info("Starting Memeaterv2 with unit {}, multiplier {}, iteration {}, time_out {} and uuid {}".format(
+    log_memv2.info("Started Memeaterv2 with unit {}, multiplier {}, iteration {}, time_out {} and uuid {}".format(
         unit, multiplier, iteration, time_out, uid))
     b = []
     for it in range(0, iteration):
@@ -162,12 +168,12 @@ def generate_large_file(unit='mb', multiplier=1):
     else:
         n_unit = 1024
     size = n_unit * multiplier
-    log_copy.info('Generating file of size {} with {} and {}'.format(size, multiplier, unit))
+    log_copy.info('Started Generating file of size {} with {} and {}'.format(size, multiplier, unit))
     data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
     tmp_file = os.path.join(data_dir, 'large.blob')
     with open(tmp_file, "wb") as f:
         f.write("0".encode() * size)
-    log_copy.info('Finished generating file of size {} with {} and {}'.format(size, multiplier, unit))
+    log_copy.info('Finished Generating file of size {} with {} and {}'.format(size, multiplier, unit))
 
 
 def copy(unit='kb', multiplier=1, remove=True, time_out=10):
@@ -180,7 +186,7 @@ def copy(unit='kb', multiplier=1, remove=True, time_out=10):
     :return:
     '''
     uid = uuid.uuid4()
-    log_copy.info("Started copy with unti {}, multiplier {}, remove {}, time_out {} and uuid {}".format(
+    log_copy.info("Started copy with unit {}, multiplier {}, remove {}, time_out {} and uuid {}".format(
         unit, multiplier, remove, time_out, uid))
     data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
     mv_dir_1 = os.path.join(data_dir, 'mv1')
@@ -259,11 +265,11 @@ def ddot(iterations, time_out=1, modifiers=[0.9, 5, 2]):
 
 
 if __name__ == '__main__':
-    # settings = {'half': True,
-    #             'time_out': 4}
-    # cpu_overload(settings)
+    settings = {'half': True,
+                'time_out': 15}
+    cpu_overload(settings)
     # memeater()
     # memeater_v2(unit='gb', multiplier=1, iteration=2, time_out=20)
     # generate_large_file()
-    copy(unit='kb', multiplier=4)
+    # copy(unit='kb', multiplier=4)
     # ddot(iterations=10)
