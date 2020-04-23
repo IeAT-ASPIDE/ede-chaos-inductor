@@ -1,14 +1,17 @@
-from flask import Flask, send_file, Response, jsonify
+from flask import Flask, send_file, Response, jsonify, request
 from flask_restful import Api, Resource, abort
 from flask_restful_swagger import swagger
-import logging
-from logging.handlers import RotatingFileHandler
+# import logging
+# from logging.handlers import RotatingFileHandler
+from eci_worker.eci_logger import log, handler
 import os
 from redis import Redis
 import rq
 from rq.job import Job
 from rq.registry import StartedJobRegistry
-from eci_worker.anomalies import example, cpu_overload, memeater_v2
+from eci_worker.anomalies import dummy, example, cpu_overload, memeater_v2, ddot
+from eci_worker.eci_chaos_gen import ChaosGen
+from eci_worker.eci_app import app, api
 import psutil
 import platform
 
@@ -18,28 +21,24 @@ log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'logs'))
 
 
 # App, Api and custom error handling
-app = Flask('eci')
-handle_exception = app.handle_exception
-handle_user_exception = app.handle_user_exception
-api = swagger.docs(Api(app), apiVersion='0.1')
-# api = Api(app)
-app.handle_exception = handle_exception
-app.handle_user_exception = handle_user_exception
+# app = Flask('eci')
+# handle_exception = app.handle_exception
+# handle_user_exception = app.handle_user_exception
+# api = swagger.docs(Api(app), apiVersion='0.1')
+# # api = Api(app)
+# app.handle_exception = handle_exception
+# app.handle_user_exception = handle_user_exception
+#
+# # Logging
+# app.logger.addHandler(handler)
+# # log = logging.getLogger("eci")
 
-# Logging
-handler = RotatingFileHandler(os.path.join(log_dir, "eci-out.log"), maxBytes=10000, backupCount=1)
-handler.setLevel(logging.INFO)
-form = "%(created)f %(filename)13s:%(lineno)-4d\t%(levelname)-8s %(message)s"
-# form2 = '[%(created)f]:[%(name)s]:[%(levelname)s] - %(message)s'
-formatter = logging.Formatter(form)
-handler.setFormatter(formatter)
-app.logger.addHandler(handler)
-log = logging.getLogger("eci")
 
 # Redis and rq
 # r_connection = Redis.from_url('redis://')
 r_connection = Redis()
 queue = rq.Queue('test', connection=r_connection)  # TODO create 3 priority queues and make them selectable from REST call
+chaosgen = ChaosGen(r_connection=r_connection, queue=queue)
 
 
 class NodeDescriptor(Resource):
@@ -135,9 +134,92 @@ class MemEater(Resource):
         return response
 
 
+class ChaosGenSessionDefiner(Resource):
+    def get(self):
+        response = jsonify(chaosgen.get_defined_session())
+        response.status_code = 200
+        return response
+
+    def put(self):
+        if not request.is_json:
+            response = jsonify({"error": 'session must be JSON'})
+            response.status_code = 415
+            return response
+        chaosgen.define_session(request.json)
+        log.info("New session definition received")
+        response = jsonify(request.json)
+        response.status_code = 201
+        return response
+
+
+class ChaosGenSessionExecutor(Resource):
+    def get(self):
+        response = jsonify(chaosgen.get_schedueled_session())
+        response.status_code = 200
+        return response
+
+    def put(self):
+        session = chaosgen.session_gen()
+        chaosgen.set_schedueled_session(session)
+        response = jsonify({"session": session})
+        response.status_code = 201
+        return response
+
+    def post(self):
+        if not chaosgen.schedueled_session:
+            log.warning("No user defined session data defined, using default!")
+        chaosgen.job_gen()
+        response = jsonify(chaosgen.get_detailed_session())
+        response.status_code = 201
+        return response
+            # response = jsonify({"error": "No user defined session data defined"})
+            # response.status_code = 500
+            # return response
+
+
+class ChaosGenSessionJobs(Resource):
+    def get(self):
+        response = jsonify({'jobs': chaosgen.get_schedueled_jobs_rq()})
+        response.status_code = 200
+        return response
+
+    def delete(self):
+        resp = chaosgen.remove_all_jobs()
+        response = jsonify(resp)
+        if 'error' in resp.keys():
+            response.status_code = 404
+        else:
+            response.status_code = 200
+        return response
+
+
+class ChaosGenSessionJob(Resource):
+    def get(self, job_id):
+        if job_id == 'all':
+            response = jsonify(chaosgen.get_detailed_session())
+            response.status_code = 200
+            return response
+        resp = chaosgen.return_jobs_status(job_id=job_id)
+        response = jsonify(resp)
+        if 'error' in resp.keys():
+            response.status_code = 404
+        else:
+            response.status_code = 200
+        return response
+
+    def delete(self, job_id):
+        resp = chaosgen.remove_job(job_id=job_id)
+        response = jsonify(resp)
+        if 'error' in resp.keys():
+            response.status_code = 404
+        else:
+            response.status_code = 200
+        return response
+
+
 class GetAllTaks(Resource):
     def get(self):
-        registry = StartedJobRegistry('test', connection=r_connection)
+        registry = StartedJobRegistry(queue=queue, connection=r_connection)
         running_job_ids = registry.get_job_ids()  # Jobs which are exactly running.
         expired_job_ids = registry.get_expired_job_ids()
         response = jsonify({'running': running_job_ids,
@@ -145,6 +227,11 @@ class GetAllTaks(Resource):
         response.status_code = 200
         return response
 
+
+api.add_resource(ChaosGenSessionDefiner, '/chaos/session')
+api.add_resource(ChaosGenSessionExecutor, '/chaos/session/execute')
+api.add_resource(ChaosGenSessionJobs, '/chaos/session/execute/jobs')
+api.add_resource(ChaosGenSessionJob, '/chaos/session/execute/jobs/<job_id>')
 
 api.add_resource(MemEater, '/memeater')
 api.add_resource(NodeDescriptor, '/node')

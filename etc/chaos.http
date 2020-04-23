@@ -1,0 +1,83 @@
+# For a quick start check out our HTTP Requests collection (Tools|HTTP Client|Open HTTP Requests Collection).
+#
+# Following HTTP Request Live Templates are available:
+# * 'gtrp' and 'gtr' create a GET request with or without query parameters;
+# * 'ptr' and 'ptrp' create a POST request with a simple or parameter-like body;
+# * 'mptr' and 'fptr' create a POST request to submit a form with a text or file field (multipart/form-data);
+
+### Get Raw session data, if non set fetch default one
+GET http://127.0.0.1:5000/chaos/session
+
+### Put user defined session data
+PUT http://127.0.0.1:5000/chaos/session
+Content-Type: application/json
+Cache-Control: no-cache
+
+{
+        "anomalies": [
+            {
+                  "type": "dummy",
+                  "options": {
+                    "stime": 10
+                  },
+                  "prob": 0.25
+                },
+            {
+                "type": "dummy",
+                "options": {
+                    "stime": 10
+                },
+                "prob": 0.25
+            },
+            {
+                "type": "dummy",
+                "options": {
+                    "stime": 10
+                },
+                "prob": 0.25
+            },
+            {
+                "type": "dummy",
+                "options": {
+                    "stime": 10
+                },
+                "prob": 0.25
+            }
+        ],
+        "options":
+          {
+            "loop": 1,
+            "randomise": 1,
+            "sample_size": 10,
+            "distribution": "prob"
+          }
+    }
+
+### get anomalies to be executed in a session
+
+GET http://127.0.0.1:5000/chaos/session/execute
+
+### Generate final session
+PUT http://127.0.0.1:5000/chaos/session/execute
+
+### Execute final session, if not available (above PUT not executed) generate it on the fly
+
+POST http://127.0.0.1:5000/chaos/session/execute
+
+
+### Get current jobs based on status (failed, finished, queued, started directly from rq
+GET http://127.0.0.1:5000/chaos/session/execute/jobs
+
+
+### Deletes all job from all registries
+DELETE http://127.0.0.1:5000/chaos/session/execute/jobs
+
+### Get detailed info on specific job based in job_id
+GET http://127.0.0.1:5000/chaos/session/execute/jobs/3cfff92e-ef5d-40a6-905d-d99683874fca
+
+### Get detailed job execution details
+GET http://127.0.0.1:5000/chaos/session/execute/jobs/all
+
+### Deletes specific job based on job_id
+DELETE http://127.0.0.1:5000/chaos/session/execute/jobs/3cfff92e-ef5d-40a6-905d-d99683874fca
+###
