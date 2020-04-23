@@ -54,14 +54,12 @@ Cache-Control: no-cache
     }
 
 ### get anomalies to be executed in a session
-
 GET http://127.0.0.1:5000/chaos/session/execute
 
 ### Generate final session
 PUT http://127.0.0.1:5000/chaos/session/execute
 
 ### Execute final session, if not available (above PUT not executed) generate it on the fly
-
 POST http://127.0.0.1:5000/chaos/session/execute
 
 
@@ -80,4 +78,12 @@ GET http://127.0.0.1:5000/chaos/session/execute/jobs/all
 
 ### Deletes specific job based on job_id
 DELETE http://127.0.0.1:5000/chaos/session/execute/jobs/3cfff92e-ef5d-40a6-905d-d99683874fca
+
+
+### Get list of available logs
+GET http://127.0.0.1:5000/chaos/session/execute/jobs/logs
+
+### Get specific log from list
+GET http://127.0.0.1:5000/chaos/session/execute/jobs/logs/dummy-out.log
+
 ###
