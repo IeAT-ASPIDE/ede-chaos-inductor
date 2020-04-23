@@ -217,6 +217,22 @@ class ChaosGenSessionJob(Resource):
         return response
 
 
+class ChaosGenSessionListAnoLogs(Resource):
+    def get(self):
+        response = jsonify({'logs': os.listdir(log_dir)})
+        response.status_code = 200
+        return response
+
+
+class ChaosGenSessionAnoLogs(Resource):
+    def get(self, ano_log):
+        log = os.path.join(log_dir, ano_log)
+        if not os.path.isfile(log):
+            response = jsonify({'error': "missing log {}".format(log)})
+            response.status_code = 404
+            return response
+        return send_file(log, mimetype='text/plain')
+
 class GetAllTaks(Resource):
     def get(self):
         registry = StartedJobRegistry(queue=queue, connection=r_connection)
@@ -232,6 +248,8 @@ api.add_resource(ChaosGenSessionDefiner, '/chaos/session')
 api.add_resource(ChaosGenSessionExecutor, '/chaos/session/execute')
 api.add_resource(ChaosGenSessionJobs, '/chaos/session/execute/jobs')
 api.add_resource(ChaosGenSessionJob, '/chaos/session/execute/jobs/<job_id>')
+api.add_resource(ChaosGenSessionListAnoLogs, '/chaos/session/execute/jobs/logs')
+api.add_resource(ChaosGenSessionAnoLogs, '/chaos/session/execute/jobs/logs/<ano_log>')
 
 api.add_resource(MemEater, '/memeater')
 api.add_resource(NodeDescriptor, '/node')
