@@ -44,4 +44,4 @@ def parse_logs(log_file):
             # print("Line {}: {}".format(cnt, line))
 
 # parse_logs('dummy-out.log')
-parse_logs('cpu_overload-out.log')
+# parse_logs('cpu_overload-out.log')

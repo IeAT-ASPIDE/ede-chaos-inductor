@@ -1,4 +1,4 @@
-#worker.py
+# eci_chaos_worker.py
 from redis import Redis
 from rq import Worker, Queue, Connection
 from eci_worker import util
