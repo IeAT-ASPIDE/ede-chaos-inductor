@@ -17,27 +17,13 @@ from eci_worker.util import load_sx
 import psutil
 import platform
 
-etc_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc'))
-log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'logs'))
-# print(etc_dir)
-
-
-# App, Api and custom error handling
-# app = Flask('eci')
-# handle_exception = app.handle_exception
-# handle_user_exception = app.handle_user_exception
-# api = swagger.docs(Api(app), apiVersion='0.1')
-# # api = Api(app)
-# app.handle_exception = handle_exception
-# app.handle_user_exception = handle_user_exception
-#
-# # Logging
-# app.logger.addHandler(handler)
-# # log = logging.getLogger("eci")
+# etc_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc'))
+etc_dir = os.path.join(os.getcwd(), 'etc')
+# log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'logs'))
+log_dir = os.path.join(os.getcwd(), 'logs')
 
 
 # Redis and rq
-# r_connection = Redis.from_url('redis://')
 r_connection = Redis()
 queue = rq.Queue('test', connection=r_connection)  # TODO create 3 priority queues and make them selectable from REST call
 chaosgen = ChaosGen(r_connection=r_connection, queue=queue)
@@ -91,8 +77,36 @@ class GetLogs(Resource):
 
 class ListAnomalyInducers(Resource):
     def get(self):
-        log.info("Logging Initialized")
-        return "nothing yet"
+        log.info("Listing available anomalies")
+        from eci_worker import anomalies
+        import inspect
+        import ast
+        module_dir = os.path.join(os.getcwd(), 'eci_worker')
+        module_file = os.path.join(module_dir, 'anomalies.py')
+        with open(module_file) as fd:
+            file_content = fd.read()
+        module = ast.parse(file_content)
+        function_definitions = [node for node in module.body if isinstance(node, ast.FunctionDef)]
+        list_function_definition = [f.name for f in function_definitions]
+        anomaly_list = []
+        for f in function_definitions:
+            anomaly_detail = {}
+            ds = ast.get_docstring(f)
+            if ds is None:
+                pass
+            else:
+                # All functions whos docstring starts with ECI& is considered as an anomaly inducer
+                if 'ECI' == ds.split('&')[0]:
+                    # print(f.name)
+                    anomaly_detail[f.name] = ds
+                    anomaly_list.append(anomaly_detail)
+        # all_functions = inspect.getmembers(anomalies, inspect.isfunction)
+        # for fn in all_functions:
+        #     # print(fn[0])
+        #     print(fn[1].__doc__)
+        #     # string = fn[1].__doc__
+        #     # print(string.split('&'))
+        return jsonify({'anomalies': anomaly_list})
 
 
 class AnomalyInducer(Resource):
@@ -184,9 +198,6 @@ class ChaosGenSessionExecutor(Resource):
         response = jsonify(chaosgen.get_detailed_session())
         response.status_code = 201
         return response
-            # response = jsonify({"error": "No user defined session data defined"})
-            # response.status_code = 500
-            # return response
 
 
 class ChaosGenSessionJobs(Resource):
@@ -273,7 +284,7 @@ api.add_resource(NodeDescriptor, '/node')
 # api.add_resource(CPUOverload, '/cpu_overload')
 api.add_resource(ListAnomalyInducers, '/inducers')
 # api.add_resource(AnomalyInducer, '/inducers/<anomaly_id>')
-api.add_resource(GetLogs, '/logs')
+api.add_resource(GetLogs, '/log')
 
 
 """

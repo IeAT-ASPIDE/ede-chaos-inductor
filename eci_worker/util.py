@@ -105,3 +105,6 @@ def parse_logs(log_file):
 #
 # print(get_pid_from_file('worker_a84a551ef6524f2d8aac2d187a306eed.pid'))
 # print(load_sx())
+
+# print(dir(anomalies))
+# print(help(anomalies))

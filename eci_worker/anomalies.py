@@ -34,6 +34,7 @@ def example(seconds):
 
 def dummy(stime=10):
     '''
+    ECI&
     Dummy anomaly to gauge detection bias
     :param stime: Number of seconds to sleep
     :return:
@@ -51,6 +52,7 @@ def sim_work_cpu(cmd):
 
 def sim_work_cpu_p(cmd):
     '''
+    ECI&
     Starts a subprocess and runs it for the amount set
     :param cmd: command to run
     :param time_out: seconds to run command
@@ -71,6 +73,7 @@ def sim_work_cpu_p(cmd):
 
 def cpu_overload(settings):
     '''
+    ECI&
     Detects the number of CPU cores and runs full load on all or half of the CPUS
     :param half: Boolean to run on half the nodes
     :return:
@@ -124,6 +127,7 @@ def memeater_v1(unit='mb', multiplier=1, time_out=10):
 
 def memeater_v2(unit='gb', multiplier=1, iteration=2, time_out=20):
     '''
+    ECI&
     Eats memory a GB at a time or based on a multiplier.
     If iteration is set to high number than it can simulates a memory leak
     :param unit: MB or GB to allocate
@@ -178,6 +182,7 @@ def generate_large_file(unit='mb', multiplier=1):
 
 def copy(unit='kb', multiplier=1, remove=True, time_out=10):
     '''
+    ECI&
     Copy large file to 3 location, simulating HDD decgradation and interference
     :param unit: KB, MB or GB to allocate
     :param multiplier: Multiplies the number of units for the given file
@@ -212,6 +217,7 @@ def copy(unit='kb', multiplier=1, remove=True, time_out=10):
 
 def ddot(iterations, time_out=1, modifiers=[0.9, 5, 2]):
     '''
+    ECI&
     Executes dot product between 2  2D arrays whos size is determined by the L2 cache size.
     Simulates ALU and CPU interference
     :param iterations: Number of iterations to run, recommended 5 or less
@@ -265,9 +271,10 @@ def ddot(iterations, time_out=1, modifiers=[0.9, 5, 2]):
 
 
 if __name__ == '__main__':
-    settings = {'half': True,
-                'time_out': 15}
-    cpu_overload(settings)
+    pass
+    # settings = {'half': True,
+    #             'time_out': 15}
+    # cpu_overload(settings)
     # memeater()
     # memeater_v2(unit='gb', multiplier=1, iteration=2, time_out=20)
     # generate_large_file()
