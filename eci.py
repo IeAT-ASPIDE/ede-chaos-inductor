@@ -290,7 +290,7 @@ class ChaosGenWorkers(Resource):
     def post(self):
         list_workers = get_list_workers()
         logic_cpu = psutil.cpu_count(logical=True)
-        if len(list_workers) > logic_cpu:
+        if len(list_workers) > logic_cpu-1:
             response = jsonify({'warning': 'maximum number of workers active!',
                                 'workers': logic_cpu})
             log.warning('Maximum number of chaos workers reached: {}'.format(logic_cpu))
