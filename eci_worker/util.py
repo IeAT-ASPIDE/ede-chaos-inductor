@@ -2,6 +2,7 @@ import yaml
 import os
 import signal
 import sys
+import glob
 
 
 def load_yaml(file):
@@ -44,7 +45,7 @@ def kill_pid(pid):
     os.kill(pid, signal.SIGTERM)
 
 
-def get_pid_from_file(file, check=True):
+def get_pid_from_file(file, check=False):
     etc_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc'))
     pid_loc = os.path.join(etc_path, file)
     if not os.path.isfile(pid_loc):
@@ -57,13 +58,22 @@ def get_pid_from_file(file, check=True):
                 return 1
             else:
                 return 0
-        # return pid
+        return pid
+
+
+def get_list_workers():
+    etc_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc'))
+    g_dir = "{}/*.pid".format(etc_path)
+    list_workers = []
+    for name in glob.glob(g_dir):
+        list_workers.append(name)
+    return list_workers
 
 
 def check_pid(pid):
     """ Check For the existence of a unix pid. """
     try:
-        os.kill(pid, 0)
+        os.kill(int(pid), 0)
     except OSError:
         return False
     else:

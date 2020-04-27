@@ -13,9 +13,11 @@ from rq.registry import StartedJobRegistry
 from eci_worker.anomalies import dummy, example, cpu_overload, memeater_v2, ddot
 from eci_worker.eci_chaos_gen import ChaosGen
 from eci_worker.eci_app import app, api
-from eci_worker.util import load_sx
+from eci_worker.util import load_sx, get_pid_from_file, check_pid, get_list_workers
 import psutil
 import platform
+import subprocess
+import glob
 
 # etc_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc'))
 etc_dir = os.path.join(os.getcwd(), 'etc')
@@ -206,6 +208,7 @@ class ChaosGenSessionJobs(Resource):
         response.status_code = 200
         return response
 
+    @token_required
     def delete(self):
         resp = chaosgen.remove_all_jobs()
         response = jsonify(resp)
@@ -230,6 +233,7 @@ class ChaosGenSessionJob(Resource):
             response.status_code = 200
         return response
 
+    @token_required
     def delete(self, job_id):
         resp = chaosgen.remove_job(job_id=job_id)
         response = jsonify(resp)
@@ -268,6 +272,42 @@ class GetAllTaks(Resource):
         return response
 
 
+class ChaosGenWorkers(Resource):
+    def get(self):
+        list_workers = get_list_workers()
+        worker_list = []
+        for l in list_workers:
+            worker = {}
+            pid = get_pid_from_file(l)
+            worker['id'] = l.split('/')[-1].split('.')[0].split('_')[-1]
+            worker['pid'] = int(pid)
+            worker['status'] = check_pid(pid)
+            worker_list.append(worker)
+        return jsonify({'workers': worker_list})
+
+    @token_required
+    def post(self):
+        list_workers = get_list_workers()
+        logic_cpu = psutil.cpu_count(logical=True)
+        if len(list_workers) > logic_cpu:
+            response = jsonify({'warning': 'maximum number of workers active!',
+                                'workers': logic_cpu})
+            log.warning('Maximum number of chaos workers reached: {}'.format(logic_cpu))
+            response.status_code = 200
+            return response
+        service_name = "chaosrqworker@{}".format(len(list_workers))
+        subprocess.call(['sudo', 'service', service_name, 'start'])
+        log.info("Starting chaos worker {}".format(len(list_workers)))
+        response = jsonify({'status': 'workers started'})
+        response.status_code = 201
+        return response
+
+    @token_required
+    def delete(self):
+        return 0
+
+
+# Sessions Resources
 api.add_resource(ChaosGenSessionDefiner, '/chaos/session')
 api.add_resource(ChaosGenSessionExecutor, '/chaos/session/execute')
 api.add_resource(ChaosGenSessionJobs, '/chaos/session/execute/jobs')
@@ -275,7 +315,10 @@ api.add_resource(ChaosGenSessionJob, '/chaos/session/execute/jobs/<job_id>')
 api.add_resource(ChaosGenSessionListAnoLogs, '/chaos/session/execute/jobs/logs')
 api.add_resource(ChaosGenSessionAnoLogs, '/chaos/session/execute/jobs/logs/<ano_log>')
 
+# Worker Resources
+api.add_resource(ChaosGenWorkers, '/workers')
 
+# General Resources
 # api.add_resource(MemEater, '/memeater')
 api.add_resource(NodeDescriptor, '/node')
 # api.add_resource(GetAllTaks, '/registry')
