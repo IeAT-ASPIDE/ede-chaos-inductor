@@ -95,4 +95,4 @@ def parse_logs(log_file):
 
 # save_pid(13080, 'worker.pid')
 #
-print(get_pid_from_file('worker.pid'))
+# print(get_pid_from_file('worker_a84a551ef6524f2d8aac2d187a306eed.pid'))

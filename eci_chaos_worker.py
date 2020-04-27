@@ -8,7 +8,7 @@ if __name__ == '__main__':
     config = util.load_yaml('worker.yaml')
     with Connection(connection=r_connection):
         worker = Worker(map(Queue, config['listen']))
-        pid_f = 'worker.pid'
+        pid_f = 'worker_{}.pid'.format(worker.name)
         print('Saving pid {} to file {}'.format(worker.pid, pid_f))
         util.save_pid(worker.pid, pid_f)
         worker.work()
