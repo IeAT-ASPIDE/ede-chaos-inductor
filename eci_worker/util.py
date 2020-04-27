@@ -77,6 +77,7 @@ def load_sx():
         s = f.readline()
     return s
 
+
 def parse_logs(log_file):
     log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'logs'))
     file_path = os.path.join(log_dir, log_file)
