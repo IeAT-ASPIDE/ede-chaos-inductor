@@ -265,14 +265,14 @@ api.add_resource(ChaosGenSessionListAnoLogs, '/chaos/session/execute/jobs/logs')
 api.add_resource(ChaosGenSessionAnoLogs, '/chaos/session/execute/jobs/logs/<ano_log>')
 
 
-api.add_resource(MemEater, '/memeater')
+# api.add_resource(MemEater, '/memeater')
 api.add_resource(NodeDescriptor, '/node')
-api.add_resource(GetAllTaks, '/registry')
-api.add_resource(TaskExampleDetails, '/task/<job_id>')
-api.add_resource(TaskExample, '/task')
-api.add_resource(CPUOverload, '/cpu_overload')
+# api.add_resource(GetAllTaks, '/registry')
+# api.add_resource(TaskExampleDetails, '/task/<job_id>')
+# api.add_resource(TaskExample, '/task')
+# api.add_resource(CPUOverload, '/cpu_overload')
 api.add_resource(ListAnomalyInducers, '/inducers')
-api.add_resource(AnomalyInducer, '/inducers/<anomaly_id>')
+# api.add_resource(AnomalyInducer, '/inducers/<anomaly_id>')
 api.add_resource(GetLogs, '/logs')
 
 

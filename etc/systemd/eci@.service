@@ -1,3 +1,4 @@
+# sudo service eci@1 start
 [Unit]
 Description=Chaos Inducer REST API
 After=network.target

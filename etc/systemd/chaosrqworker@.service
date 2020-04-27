@@ -1,3 +1,4 @@
+#sudo service chaosrqworker@1 start
 [Unit]
 Description=Chaos RQ Worker Number %i
 After=network.target
