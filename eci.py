@@ -1,5 +1,6 @@
 from flask import Flask, send_file, Response, jsonify, request
 from flask_restful import Api, Resource, abort
+from functools import wraps
 from flask_restful_swagger import swagger
 # import logging
 # from logging.handlers import RotatingFileHandler
@@ -12,6 +13,7 @@ from rq.registry import StartedJobRegistry
 from eci_worker.anomalies import dummy, example, cpu_overload, memeater_v2, ddot
 from eci_worker.eci_chaos_gen import ChaosGen
 from eci_worker.eci_app import app, api
+from eci_worker.util import load_sx
 import psutil
 import platform
 
@@ -39,6 +41,15 @@ log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'logs'))
 r_connection = Redis()
 queue = rq.Queue('test', connection=r_connection)  # TODO create 3 priority queues and make them selectable from REST call
 chaosgen = ChaosGen(r_connection=r_connection, queue=queue)
+
+
+def token_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if request.headers['x-access-tokens'] != load_sx():
+            return jsonify({'resp': 'failed token'})
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 class NodeDescriptor(Resource):
@@ -165,6 +176,7 @@ class ChaosGenSessionExecutor(Resource):
         response.status_code = 201
         return response
 
+    @token_required
     def post(self):
         if not chaosgen.schedueled_session:
             log.warning("No user defined session data defined, using default!")
@@ -233,6 +245,7 @@ class ChaosGenSessionAnoLogs(Resource):
             return response
         return send_file(log, mimetype='text/plain')
 
+
 class GetAllTaks(Resource):
     def get(self):
         registry = StartedJobRegistry(queue=queue, connection=r_connection)
@@ -250,6 +263,7 @@ api.add_resource(ChaosGenSessionJobs, '/chaos/session/execute/jobs')
 api.add_resource(ChaosGenSessionJob, '/chaos/session/execute/jobs/<job_id>')
 api.add_resource(ChaosGenSessionListAnoLogs, '/chaos/session/execute/jobs/logs')
 api.add_resource(ChaosGenSessionAnoLogs, '/chaos/session/execute/jobs/logs/<ano_log>')
+
 
 api.add_resource(MemEater, '/memeater')
 api.add_resource(NodeDescriptor, '/node')

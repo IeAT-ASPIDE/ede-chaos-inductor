@@ -70,6 +70,13 @@ def check_pid(pid):
         return True
 
 
+def load_sx():
+    etc_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc'))
+    xfile = os.path.join(etc_path, 's.x')
+    with open(xfile) as f:
+        s = f.readline()
+    return s
+
 def parse_logs(log_file):
     log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'logs'))
     file_path = os.path.join(log_dir, log_file)
@@ -96,3 +103,4 @@ def parse_logs(log_file):
 # save_pid(13080, 'worker.pid')
 #
 # print(get_pid_from_file('worker_a84a551ef6524f2d8aac2d187a306eed.pid'))
+# print(load_sx())
