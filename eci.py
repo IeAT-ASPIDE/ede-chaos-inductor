@@ -17,6 +17,7 @@ from eci_worker.util import load_sx, get_pid_from_file, check_pid, get_list_work
 import psutil
 import platform
 import subprocess
+import time
 import glob
 
 # etc_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc'))
@@ -304,7 +305,29 @@ class ChaosGenWorkers(Resource):
 
     @token_required
     def delete(self):
-        return 0
+        if not request.json:
+            list_workers = get_list_workers()
+            for worker in range(len(list_workers)):
+                service_name = "chaosrqworker@{}".format(worker)
+                subprocess.call(['sudo', 'service', service_name, 'stop'])
+                time.sleep(1)
+            log.info("Stopped all chaos workers")
+            response = jsonify({'status': 'stopped all chaos workers'})
+            response.status_code = 200
+        elif 'id' not in request.json.keys():
+            response = jsonify({'status': 'missing worker id in request'})
+            response.status_code = 400
+            log.error("No worker id for stopping specified")
+
+        else:
+            service_name = "chaosrqworker@{}".format(request.json['id'])
+            subprocess.call(['sudo', 'service', service_name, 'stop'])
+            time.sleep(1)
+            log.info("Worker with id {} stopped".format(request.json['id']))
+            response = jsonify({'status': 'stopped worker with id {}'.format(request.json['id'])})
+            response.status_code = 200
+        return response
+
 
 
 # Sessions Resources
@@ -328,6 +351,7 @@ api.add_resource(NodeDescriptor, '/node')
 api.add_resource(ListAnomalyInducers, '/inducers')
 # api.add_resource(AnomalyInducer, '/inducers/<anomaly_id>')
 api.add_resource(GetLogs, '/log')
+
 
 
 """
