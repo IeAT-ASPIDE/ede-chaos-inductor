@@ -1,5 +1,6 @@
 import yaml
 import os
+import signal
 import sys
 
 
@@ -21,6 +22,52 @@ def save_yaml(file, data):
     file_path = os.path.join(etc_path, file)
     with open(file_path, 'w+') as cfile:
         yaml.dump(data, cfile, allow_unicode=True)
+
+
+def save_pid(pid, file):
+    etc_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc'))
+    pid_loc = os.path.join(etc_path, file)
+    with open(pid_loc, 'w') as f:
+        f.write(str(pid))
+
+
+def clean_up_pid(file):
+    etc_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc'))
+    pid_loc = os.path.join(etc_path, file)
+    if not os.path.isfile(pid_loc):
+        return -1
+    os.remove(pid_loc)
+    return 0
+
+
+def kill_pid(pid):
+    os.kill(pid, signal.SIGTERM)
+
+
+def get_pid_from_file(file, check=True):
+    etc_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc'))
+    pid_loc = os.path.join(etc_path, file)
+    if not os.path.isfile(pid_loc):
+        return -1
+    else:
+        with open(pid_loc, 'r') as f:
+            pid = f.readline()
+        if check:
+            if check_pid(int(pid)):
+                return 1
+            else:
+                return 0
+        # return pid
+
+
+def check_pid(pid):
+    """ Check For the existence of a unix pid. """
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    else:
+        return True
 
 
 def parse_logs(log_file):
@@ -45,3 +92,7 @@ def parse_logs(log_file):
 
 # parse_logs('dummy-out.log')
 # parse_logs('cpu_overload-out.log')
+
+# save_pid(13080, 'worker.pid')
+#
+print(get_pid_from_file('worker.pid'))
