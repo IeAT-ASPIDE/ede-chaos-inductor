@@ -89,9 +89,8 @@ def cpu_overload(settings):
     pool = multiprocessing.Pool(processes=cpu_count)
     try:
         pool.map(sim_work_cpu_p, ["yes", ">", "/dev/null"] * cpu_count)
-    except OSError:
-        # print("OS Error")
-        pass
+    except Exception as inst:
+        log_cpu.error("Error while executing cpu_overload {}  with {} and {}".format(uid, type(inst), inst.args))
     log_cpu.info("Finished CPU_overload with settings {} and uuid {}".format(settings, uid))
 
 
