@@ -71,7 +71,7 @@ def sim_work_cpu_p(cmd):
         # print(errs)
 
 
-def cpu_overload(settings):
+def cpu_overload(half=1, time_out=10):
     '''
     ECI&
     Detects the number of CPU cores and runs full load on all or half of the CPUS
@@ -79,19 +79,18 @@ def cpu_overload(settings):
     :return:
     '''
     uid = uuid.uuid4()
-    log_cpu.info("Started CPU_overload with settings {} and uuid {}".format(settings, uid))
-    half = settings['half']
+    log_cpu.info("Started CPU_overload with settings {} {}  and uuid {}".format(half, time_out, uid))
     cpu_count = multiprocessing.cpu_count()
     if half:
         cpu_count = int(cpu_count/2)
-    time_out = settings.get('time_out', 10)  # TODO better fox for pool.map arg issue
-    save_yaml('cpu_overload.yaml', {'time_out': time_out})
+    # time_out = settings.get('time_out', 10)
+    save_yaml('cpu_overload.yaml', {'time_out': time_out}) # TODO better fox for pool.map arg issue
     pool = multiprocessing.Pool(processes=cpu_count)
     try:
         pool.map(sim_work_cpu_p, ["yes", ">", "/dev/null"] * cpu_count)
     except Exception as inst:
         log_cpu.error("Error while executing cpu_overload {}  with {} and {}".format(uid, type(inst), inst.args))
-    log_cpu.info("Finished CPU_overload with settings {} and uuid {}".format(settings, uid))
+    log_cpu.info("Finished CPU_overload with settings {} {} and uuid {}".format(half, time_out, uid))
 
 
 def memeater_v1(unit='mb', multiplier=1, time_out=10):
