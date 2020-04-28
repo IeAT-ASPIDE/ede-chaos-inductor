@@ -128,6 +128,7 @@ class ChaosGen():
             jobs = self.schedueled_session
         mod = import_module(self.anomaly_def)
         # print(mod)
+        log.info("Defined jobs: {}".format(jobs))
         for rjob in jobs:
             ano_inst = getattr(mod, rjob['type'])
             job = self.queue.enqueue(ano_inst, **rjob['options'])
@@ -178,7 +179,7 @@ class ChaosGen():
         self.schedueled_session = session
 
     def get_defined_session(self):
-        log.error("Queried defined session")
+        log.warning("Queried defined session")
         return self.session
 
     def get_detailed_session(self):

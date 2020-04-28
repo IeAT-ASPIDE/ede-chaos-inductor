@@ -197,7 +197,13 @@ class ChaosGenSessionExecutor(Resource):
     def post(self):
         if not chaosgen.schedueled_session:
             log.warning("No user defined session data defined, using default!")
-        chaosgen.job_gen()
+        try:
+            chaosgen.job_gen()
+        except Exception as inst:
+            log.error("Failed to generate jobs with {} and {}".format(type(inst), inst.args))
+            response = jsonify({'error': "Failed to generate jobs with {} and {}".format(type(inst), inst.args)})
+            response.status_code = 400
+            return response
         response = jsonify(chaosgen.get_detailed_session())
         response.status_code = 201
         return response
