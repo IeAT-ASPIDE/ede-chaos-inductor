@@ -70,6 +70,7 @@ class ChaosGen():
                     "distribution": 0
                 }
         }
+        self.stagger_time = 300
         self.running = []
         self.finished = []
         self.failed = []
@@ -83,6 +84,11 @@ class ChaosGen():
         log.info("New session raw defined")
         self.session = session
 
+    def _intersperse(self, sgen, item):
+        result = [item] * (len(sgen) * 2 - 1)
+        result[0::2] = sgen
+        return result
+
     def session_gen(self):
         sgen = self.session
         log.info("Detailed session generation started")
@@ -93,6 +99,7 @@ class ChaosGen():
             self.randomise = options.get('randomise', False)
             self.distribution = options.get('distribution', False)
             self.sample_size = options.get('sample_size', len(anomalies))
+            self.stagger_time = options.get('stagger_time', 0)
         # print(anomalies)
         if self.randomise:
             log.info("Session is randomised")
@@ -113,6 +120,13 @@ class ChaosGen():
                 import sys
                 sys.exit()
             sgen = list(np.random.choice(anomalies, self.sample_size, p=prob_list))
+        else:
+            sgen = anomalies
+
+        if self.stagger_time:
+            log.info("Stagger set to {}".format(self.stagger_time))
+            stagger = {'type': 'dummy', 'options': {'stime': self.stagger_time, 'silent': 1}}
+            sgen = self._intersperse(sgen=sgen, item=stagger)
 
         # print(anomalies)
         # print(len(anomalies))
@@ -330,8 +344,9 @@ if __name__ == '__main__':
 
     # print(queue.finished_job_registry.get_job_ids())
 
-    # test_gen = ChaosGen(r_connection=r_connection, queue=queue, session=session)
-    # t = test_gen._session_gen()
+    test_gen = ChaosGen(r_connection=r_connection, queue=queue, session=session)
+    t = test_gen.session_gen()
+    print(t)
     # test_gen.job_gen()
     # print(test_gen._get_schedueled_jobs())
     # print(test_gen._get_session())

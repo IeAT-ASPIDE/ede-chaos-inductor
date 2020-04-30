@@ -32,17 +32,21 @@ def example(seconds):
     print('Task completed')
 
 
-def dummy(stime=10):
+def dummy(stime=10, silent=False):
     '''
     ECI&
     Dummy anomaly to gauge detection bias
     :param stime: Number of seconds to sleep
+    :param silent: Boolean if true no logging
     :return:
     '''
-    uid = uuid.uuid4()
-    log_dummy.info("Started dummy with stime {} and uuid {}".format(stime, uid))
-    time.sleep(stime)
-    log_dummy.info("Finished dummy with stime {} and uuid {}".format(stime, uid))
+    if not silent:
+        uid = uuid.uuid4()
+        log_dummy.info("Started dummy with options [stime{}] and uuid {}".format(stime, uid))
+        time.sleep(stime)
+        log_dummy.info("Finished dummy with options [stime{}] and uuid {}".format(stime, uid))
+    else:
+        time.sleep(stime)
 
 
 def sim_work_cpu(cmd):
@@ -66,9 +70,6 @@ def sim_work_cpu_p(cmd):
             timeout=time_out['time_out'])  # will raise error and kill any process that runs longer than set by time_out
     except subprocess.TimeoutExpired as e:
         p1.kill()
-        # outs, errs = p1.communicate()
-        # print(outs)
-        # print(errs)
 
 
 def cpu_overload(half=1, time_out=10):
@@ -79,18 +80,18 @@ def cpu_overload(half=1, time_out=10):
     :return:
     '''
     uid = uuid.uuid4()
-    log_cpu.info("Started CPU_overload with settings {} {}  and uuid {}".format(half, time_out, uid))
+    log_cpu.info("Started CPU_overload with options [half {}, time_out {}]  and uuid {}".format(half, time_out, uid))
     cpu_count = multiprocessing.cpu_count()
     if half:
         cpu_count = int(cpu_count/2)
     # time_out = settings.get('time_out', 10)
-    save_yaml('cpu_overload.yaml', {'time_out': time_out}) # TODO better fox for pool.map arg issue
+    save_yaml('cpu_overload.yaml', {'time_out': time_out})  # TODO better fox for pool.map arg issue
     pool = multiprocessing.Pool(processes=cpu_count)
     try:
         pool.map(sim_work_cpu_p, ["yes", ">", "/dev/null"] * cpu_count)
     except Exception as inst:
         log_cpu.error("Error while executing cpu_overload {}  with {} and {}".format(uid, type(inst), inst.args))
-    log_cpu.info("Finished CPU_overload with settings {} {} and uuid {}".format(half, time_out, uid))
+    log_cpu.info("Finished CPU_overload with options [half {}, time_out {}] and uuid {}".format(half, time_out, uid))
 
 
 def memeater_v1(unit='mb', multiplier=1, time_out=10):
@@ -143,14 +144,14 @@ def memeater_v2(unit='gb', multiplier=1, iteration=2, time_out=20):
         n_unit = pow(1024, 3)
     else:
         n_unit = pow(1024, 2)
-    log_memv2.info("Started Memeaterv2 with unit {}, multiplier {}, iteration {}, time_out {} and uuid {}".format(
+    log_memv2.info("Started Memeaterv2 with options [unit {}, multiplier {}, iteration {}, time_out {}] and uuid {}".format(
         unit, multiplier, iteration, time_out, uid))
     b = []
     for it in range(0, iteration):
         a = "a" * (multiplier * n_unit)
         b.append(a)
         time.sleep(time_out)
-    log_memv2.info("Finised Memeaterv2 with unit {}, multiplier {}, iteration {}, time_out {} and uuid {}".format(
+    log_memv2.info("Finised Memeaterv2 with options [unit {}, multiplier {}, iteration {}, time_out {}] and uuid {}".format(
         unit, multiplier, iteration, time_out, uid))
 
 
@@ -170,12 +171,12 @@ def generate_large_file(unit='mb', multiplier=1):
     else:
         n_unit = 1024
     size = n_unit * multiplier
-    log_copy.info('Started Generating file of size {} with {} and {}'.format(size, multiplier, unit))
+    log_copy.info('Started Generating_large_file with options [size {}, multiplier {}] and uuid {}'.format(size, multiplier, unit))
     data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
     tmp_file = os.path.join(data_dir, 'large.blob')
     with open(tmp_file, "wb") as f:
         f.write("0".encode() * size)
-    log_copy.info('Finished Generating file of size {} with {} and {}'.format(size, multiplier, unit))
+    log_copy.info('Finished Generating_large_file with options [size {}, multiplier {}] and uuid {}'.format(size, multiplier, unit))
 
 
 def copy(unit='kb', multiplier=1, remove=True, time_out=10):
@@ -189,7 +190,7 @@ def copy(unit='kb', multiplier=1, remove=True, time_out=10):
     :return:
     '''
     uid = uuid.uuid4()
-    log_copy.info("Started copy with unit {}, multiplier {}, remove {}, time_out {} and uuid {}".format(
+    log_copy.info("Started copy with options [unit {}, multiplier {}, remove {}, time_out {}] and uuid {}".format(
         unit, multiplier, remove, time_out, uid))
     data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
     mv_dir_1 = os.path.join(data_dir, 'mv1')
@@ -209,7 +210,7 @@ def copy(unit='kb', multiplier=1, remove=True, time_out=10):
     time.sleep(time_out)
     if remove:
         os.remove(file_path)
-    log_copy.info("Finished copy with unit {}, multiplier {}, remove {}, time_out {} and uuid {}".format(
+    log_copy.info("Finished copy with options [unit {}, multiplier {}, remove {}, time_out {}] and uuid {}".format(
         unit, multiplier, remove, time_out, uid))
 
 
@@ -225,7 +226,7 @@ def ddot(iterations, time_out=1, modifiers=[0.9, 5, 2]):
     '''
     uid = uuid.uuid4()
     l2_cashe = int(cpuinfo.get_cpu_info()['l2_cache_size'])
-    log_ddot.info("Started ddot with iteration {}, time_out {}, modifiers {}, L2CacheSize {} and uuid {}".format(
+    log_ddot.info("Started ddot with options [iteration {}, time_out {}, modifiers {}, L2CacheSize {}] and uuid {}".format(
         iterations, time_out, modifiers, l2_cashe, uid))
 
     def compute_array_size(l2_cashe,
@@ -258,13 +259,13 @@ def ddot(iterations, time_out=1, modifiers=[0.9, 5, 2]):
     for it in range(1, iterations):
         modifier = random.choice(modifiers)
         asize = int(asize*modifier)
-        log_ddot.info("Modifier of uuid {} for iteration {} out of {} is {}".format(uid, it, iterations, modifier))
+        log_ddot.info("Modifier ddot of uuid {} for [iteration {} out of {} is {}]".format(uid, it, iterations, modifier))
         arr1 = np.random.rand(asize, asize)
         arr2 = np.random.rand(asize, asize)
         n_dot = np.dot(arr1, arr2)
         time.sleep(time_out)
         del arr1, arr2, n_dot
-    log_ddot.info("Finished ddot with iteration {}, time_out {}, modifiers {}, L2CacheSize {} and uuid {}".format(
+    log_ddot.info("Finished ddot with options [iteration {}, time_out {}, modifiers {}, L2CacheSize {}] and uuid {}".format(
         iterations, time_out, modifiers, l2_cashe, uid))
 
 
