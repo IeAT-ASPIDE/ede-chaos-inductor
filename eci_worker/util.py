@@ -3,6 +3,7 @@ import os
 import signal
 import sys
 import glob
+from pygrok import Grok
 
 
 def load_yaml(file):
@@ -88,7 +89,7 @@ def load_sx():
     return s
 
 
-def parse_logs(log_file):
+def parse_logs_old(log_file):
     log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'logs'))
     file_path = os.path.join(log_dir, log_file)
     with open(file_path) as fp:
@@ -108,6 +109,29 @@ def parse_logs(log_file):
             print(line.split('INFO')[-1].lstrip().split('with')[1].split('and')[0])
             # print("Line {}: {}".format(cnt, line))
 
+
+def parse_logs(file,
+               type=None):
+    if type == 'copy':
+        pattern = '%{NUMBER:unixtime}  anomalies.py:%{NUMBER:linenumber} 	%{LOGLEVEL:loglevel}     %{WORD:status} %{WORD:anomaly_name} with options %{GREEDYDATA:settings} and uuid %{GREEDYDATA:uuid}'
+    elif type == 'cpu':
+        pattern = '%{NUMBER:unixtime}  anomalies.py:%{NUMBER:linenumber}  	%{LOGLEVEL:loglevel}     %{WORD:status} %{WORD:anomaly_name} with options %{GREEDYDATA:settings} and uuid %{GREEDYDATA:uuid}'
+        # pattern = '%{NUMBER:unixtime}  anomalies.py:%{NUMBER:linenumber}%{GREEDYDATA}%{LOGLEVEL:loglevel}     %{WORD:status} %{WORD:anomaly_name} with options %{GREEDYDATA:settiongs} and uuid %{GREEDYDATA:uuid}'
+    else:
+        pattern = '%{NUMBER:unixtime}  anomalies.py:%{NUMBER:linenumber} 	%{LOGLEVEL:loglevel}     %{WORD:status} %{WORD:anomaly_name} with options %{GREEDYDATA:settings} and uuid %{GREEDYDATA:uuid}'
+    grok = setup_grok(pattern)
+    with open(file, 'r') as log:
+        lines = log.readlines()
+
+    for line in lines:
+        match = grok.match(line)
+        print(match)
+
+
+def setup_grok(pattern):
+    grok = Grok(pattern)
+    return grok
+
 # parse_logs('dummy-out.log')
 # parse_logs('cpu_overload-out.log')
 
@@ -118,3 +142,21 @@ def parse_logs(log_file):
 
 # print(dir(anomalies))
 # print(help(anomalies))
+
+
+if __name__ == '__main__':
+    copy_text =  '1588248878.329905  anomalies.py:194 	INFO     Started copy with options [unit mb, multiplier 4, remove True, time_out 10] and uuid 90a9dd57-ad60-4df7-aa12-43c36ab0c631'
+    copy_pattern = '%{NUMBER:unixtime}  anomalies.py:%{NUMBER:linenumber} 	%{LOGLEVEL:loglevel}     %{WORD:status} %{WORD:anomaly_name} with options %{GREEDYDATA:settiongs} and uuid %{GREEDYDATA:uuid}'
+    copy_file = '/Users/Gabriel/Documents/workspaces/ede-chaos-inductor/logs/copy-out.log'
+    # parse_logs(copy_file, 'copy')
+
+    text2 = '1588251588.749776  anomalies.py:83  	INFO     Started CPU_overload with options [half True, time_out 15]  and uuid 0377d8ed-3221-4fe8-9bea-502f369b0fb3'
+    cpu_pattern = '%{NUMBER:unixtime}  anomalies.py:%{NUMBER:linenumber}  	%{LOGLEVEL:loglevel}     %{WORD:status} %{WORD:anomaly_name} with options %{GREEDYDATA:settiongs} and uuid %{GREEDYDATA:uuid}'
+    cpu_file = '/Users/Gabriel/Documents/workspaces/ede-chaos-inductor/logs/cpu_overload-out.log'
+    # parse_logs(cpu_file, 'cpu')
+
+    ddot_file = '/Users/Gabriel/Documents/workspaces/ede-chaos-inductor/logs/ddot-out.log'
+    # parse_logs(ddot_file)
+
+    dummy_file = '/Users/Gabriel/Documents/workspaces/ede-chaos-inductor/logs/dummy-out.log'
+    parse_logs(dummy_file)

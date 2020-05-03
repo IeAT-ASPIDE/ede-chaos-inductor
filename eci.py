@@ -19,6 +19,7 @@ import platform
 import subprocess
 import time
 import glob
+from zipfile import ZipFile
 
 # etc_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc'))
 etc_dir = os.path.join(os.getcwd(), 'etc')
@@ -257,6 +258,23 @@ class ChaosGenSessionListAnoLogs(Resource):
         response.status_code = 200
         return response
 
+    def post(self):
+        list_files = []
+        for name in glob.glob(log_dir+"/*.log"):
+            if 'eci' in name:
+                pass
+            else:
+                list_files.append(name)
+
+        # writing files to a zipfile
+        uname = platform.uname()
+        arhive_file = os.path.join(log_dir, 'logs_{}.zip'.format(uname.node))
+        with ZipFile(arhive_file, 'w') as zip:
+            # writing each file one by one
+            for file in list_files:
+                zip.write(file)
+        return send_file(arhive_file, mimetype='application/zip')
+
 
 class ChaosGenSessionAnoLogs(Resource):
     def get(self, ano_log):
@@ -344,6 +362,7 @@ api.add_resource(ChaosGenSessionJob, '/chaos/session/execute/jobs/<job_id>')
 api.add_resource(ChaosGenSessionListAnoLogs, '/chaos/session/execute/jobs/logs')
 api.add_resource(ChaosGenSessionAnoLogs, '/chaos/session/execute/jobs/logs/<ano_log>')
 
+
 # Worker Resources
 api.add_resource(ChaosGenWorkers, '/workers')
 
@@ -357,6 +376,7 @@ api.add_resource(NodeDescriptor, '/node')
 api.add_resource(ListAnomalyInducers, '/inducers')
 # api.add_resource(AnomalyInducer, '/inducers/<anomaly_id>')
 api.add_resource(GetLogs, '/log')
+
 
 
 

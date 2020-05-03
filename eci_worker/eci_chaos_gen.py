@@ -351,7 +351,7 @@ if __name__ == '__main__':
     # print(test_gen._get_schedueled_jobs())
     # print(test_gen._get_session())
     # # time.sleep(15)
-    # print(test_gen.get_schedueled_jobs_rq())
+    print(test_gen.get_schedueled_jobs_rq())
     # print(test_gen.return_jobs_status(test_gen._get_schedueled_jobs()[0]))
     # # print(np.random.uniform(low=0.1, high=np.nextafter(1, 2), size=1))
     # print(test_gen.get_detailed_session())

@@ -90,7 +90,7 @@ def cpu_overload(half=1, time_out=10):
     try:
         pool.map(sim_work_cpu_p, ["yes", ">", "/dev/null"] * cpu_count)
     except Exception as inst:
-        log_cpu.error("Error while executing cpu_overload {}  with {} and {}".format(uid, type(inst), inst.args))
+        log_cpu.warning("Warning while executing cpu_overload {}  with {} and {}".format(uid, type(inst), inst.args))
     log_cpu.info("Finished CPU_overload with options [half {}, time_out {}] and uuid {}".format(half, time_out, uid))
 
 
@@ -270,12 +270,12 @@ def ddot(iterations, time_out=1, modifiers=[0.9, 5, 2]):
 
 
 if __name__ == '__main__':
-    pass
+    dummy()
     # settings = {'half': True,
     #             'time_out': 15}
-    # cpu_overload(settings)
+    # cpu_overload(**settings)
     # memeater()
     # memeater_v2(unit='gb', multiplier=1, iteration=2, time_out=20)
     # generate_large_file()
-    # copy(unit='kb', multiplier=4)
-    # ddot(iterations=10)
+    # copy(unit='mb', multiplier=4)
+    # ddot(iterations=5)
