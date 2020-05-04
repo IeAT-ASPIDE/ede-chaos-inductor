@@ -268,12 +268,27 @@ class ChaosGenSessionListAnoLogs(Resource):
 
         # writing files to a zipfile
         uname = platform.uname()
+        folder_name = "/logs_{}".format(uname.node)
         arhive_file = os.path.join(log_dir, 'logs_{}.zip'.format(uname.node))
         with ZipFile(arhive_file, 'w') as zip:
             # writing each file one by one
             for file in list_files:
-                zip.write(file)
+                arcname_f = "/{}/{}".format(folder_name, file.split('/')[-1])
+                zip.write(file, arcname=arcname_f)
         return send_file(arhive_file, mimetype='application/zip')
+
+    def delete(self):
+        list_files = []
+        for name in glob.glob(log_dir + "/*.log"):
+            if 'eci' in name:
+                pass
+            else:
+                list_files.append(name)
+        for file in list_files:
+            os.remove(file)
+        response =jsonify({"status": "files deleted"})
+        response.status_code = 200
+        return response
 
 
 class ChaosGenSessionAnoLogs(Resource):
