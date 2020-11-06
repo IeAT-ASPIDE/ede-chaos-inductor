@@ -1,0 +1,217 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "http://example.com/example.json",
+    "type": "object",
+    "title": "ECI Session Schema",
+    "description": "Simple uniform session schema",
+    "default": {},
+    "additionalProperties": true,
+    "required": [
+        "anomalies",
+        "options"
+    ],
+    "properties": {
+        "anomalies": {
+            "$id": "#/properties/anomalies",
+            "type": "array",
+            "title": "The Anomalies Schema",
+            "description": "Array of the desired anomalies and their config",
+            "default": [],
+            "examples": [
+                [
+                    {
+                        "options": {
+                            "stime": 10.0
+                        },
+                        "type": "dummy",
+                        "prob": 0.4
+                    },
+                    {
+                        "prob": 0.1,
+                        "options": {
+                            "time_out": 15.0,
+                            "half": 1.0
+                        },
+                        "type": "cpu_overload"
+                    },
+                    {
+                        "prob": 0.2,
+                        "options": {
+                            "unit": "gb",
+                            "time_out": 20.0,
+                            "multiplier": 1.0,
+                            "iteration": 2.0
+                        },
+                        "type": "memeater_v2"
+                    }
+                ]
+            ],
+            "additionalItems": true,
+            "items": {
+                "$id": "#/properties/anomalies/items",
+                "type": "object",
+                "title": "The Items Schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": {},
+                "examples": [
+                    {
+                        "prob": 0.4,
+                        "options": {
+                            "stime": 10.0
+                        },
+                        "type": "dummy"
+                    },
+                    {
+                        "type": "cpu_overload",
+                        "prob": 0.1,
+                        "options": {
+                            "time_out": 15.0,
+                            "half": 1.0
+                        }
+                    },
+                    {
+                        "prob": 0.2,
+                        "options": {
+                            "unit": "gb",
+                            "time_out": 20.0,
+                            "multiplier": 1.0,
+                            "iteration": 2.0
+                        },
+                        "type": "memeater_v2"
+                    }
+                ],
+                "additionalProperties": true,
+                "required": [
+                    "type",
+                    "options",
+                    "prob"
+                ],
+                "properties": {
+                    "type": {
+                        "$id": "#/properties/anomalies/items/properties/type",
+                        "type": "string",
+                        "title": "The Type Schema",
+                        "description": "Name of anomaly",
+                        "default": "",
+                        "examples": [
+                            "dummy"
+                        ]
+                    },
+                    "options": {
+                        "$id": "#/properties/anomalies/items/properties/options",
+                        "type": "object",
+                        "title": "The Options Schema",
+                        "description": "Options of the anomaly",
+                        "default": {},
+                        "examples": [
+                            {
+                                "stime": 10.0
+                            }
+                        ],
+                        "additionalProperties": true,
+                        "required": [
+                            "stime"
+                        ],
+                        "properties": {
+                            "stime": {
+                                "$id": "#/properties/anomalies/items/properties/options/properties/stime",
+                                "type": "integer",
+                                "title": "The Stime Schema",
+                                "description": "Time until completeion or resume of execution",
+                                "default": 0,
+                                "examples": [
+                                    10.0
+                                ]
+                            }
+                        }
+                    },
+                    "prob": {
+                        "$id": "#/properties/anomalies/items/properties/prob",
+                        "type": "number",
+                        "title": "The Prob Schema",
+                        "description": "Probability of being executed, used in conjunction with distribution, sample_size",
+                        "default": 0,
+                        "examples": [
+                            0.4
+                        ]
+                    }
+                }
+            }
+        },
+        "options": {
+            "$id": "#/properties/options",
+            "type": "object",
+            "title": "The Options Schema",
+            "description": "Session Options",
+            "default": {},
+            "examples": [
+                {
+                    "sample_size": 10.0,
+                    "distribution": "uniform",
+                    "stagger_time": 0.0,
+                    "loop": 1.0,
+                    "randomise": 1.0
+                }
+            ],
+            "additionalProperties": true,
+            "required": [
+                "stagger_time",
+                "randomise",
+                "sample_size",
+                "distribution"
+            ],
+            "properties": {
+                "loop": {
+                    "$id": "#/properties/options/properties/loop",
+                    "type": "integer",
+                    "title": "The Loop Schema",
+                    "description": "Loop anomaly session (NOT WORKING)",
+                    "default": 0,
+                    "examples": [
+                        1.0
+                    ]
+                },
+                "stagger_time": {
+                    "$id": "#/properties/options/properties/stagger_time",
+                    "type": "integer",
+                    "title": "The Stagger_time Schema",
+                    "description": "Staggers execution of anomalies",
+                    "default": 0,
+                    "examples": [
+                        0.0
+                    ]
+                },
+                "randomise": {
+                    "$id": "#/properties/options/properties/randomise",
+                    "type": "integer",
+                    "title": "The Randomise Schema",
+                    "description": "Randomise the selection of anomalies based on prop option",
+                    "default": 0,
+                    "examples": [
+                        1.0
+                    ]
+                },
+                "sample_size": {
+                    "$id": "#/properties/options/properties/sample_size",
+                    "type": "integer",
+                    "title": "The Sample_size Schema",
+                    "description": "Increases the anomalies to be executed in a session based on prob and randomized",
+                    "default": 0,
+                    "examples": [
+                        10.0
+                    ]
+                },
+                "distribution": {
+                    "$id": "#/properties/options/properties/distribution",
+                    "type": "string",
+                    "title": "The Distribution Schema",
+                    "description": "What type of distribution to use when generating/adding anomalies to a session",
+                    "default": "",
+                    "examples": [
+                        "uniform"
+                    ]
+                }
+            }
+        }
+    }
+}
