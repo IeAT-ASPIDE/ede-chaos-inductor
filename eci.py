@@ -329,7 +329,7 @@ class ChaosGenWorkers(Resource):
     def post(self):
         list_workers = get_list_workers()
         logic_cpu = psutil.cpu_count(logical=True)
-        if len(list_workers) > logic_cpu-1:
+        if len(list_workers) > logic_cpu-1: # todo fix issue with pid file remaining after shutdown, can't start new workers.
             response = jsonify({'warning': 'maximum number of workers active!',
                                 'workers': logic_cpu})
             log.warning('Maximum number of chaos workers reached: {}'.format(logic_cpu))

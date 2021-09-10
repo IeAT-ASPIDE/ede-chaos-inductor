@@ -250,7 +250,7 @@ def ddot(iterations, time_out=1, modifiers=[0.9, 5, 2]):
             size = 2048
         elif l2_cashe > 32768:
             print("L2 cache to large, no presents found, defaulting to max value.")
-            size = 2048
+            size = 2048  #todo: bug if virtualized CPU reports to large a cache size, at iteration 3 allocates 12.6GB RAM, decrease modifiers might help
         elif l2_cashe < 256:
             print("L2 cache to small, no presents found, defaulting to min value.")
             size = 45
@@ -260,22 +260,27 @@ def ddot(iterations, time_out=1, modifiers=[0.9, 5, 2]):
         modifier = random.choice(modifiers)
         asize = int(asize*modifier)
         log_ddot.info("Modifier ddot of uuid {} for [iteration {} out of {} is {}]".format(uid, it, iterations, modifier))
-        arr1 = np.random.rand(asize, asize)
-        arr2 = np.random.rand(asize, asize)
-        n_dot = np.dot(arr1, arr2)
-        time.sleep(time_out)
-        del arr1, arr2, n_dot
+        try:
+            arr1 = np.random.rand(asize, asize)
+            arr2 = np.random.rand(asize, asize)
+            n_dot = np.dot(arr1, arr2)
+            time.sleep(time_out)
+            del arr1, arr2, n_dot
+        except Exception as inst:
+            log_ddot.error("Error with allocating array with {} and {}".format(type(inst), inst.args))
     log_ddot.info("Finished ddot with options [iteration {}, time_out {}, modifiers {}, L2CacheSize {}] and uuid {}".format(
         iterations, time_out, modifiers, l2_cashe, uid))
 
 
 if __name__ == '__main__':
-    dummy()
+    # dummy()
     # settings = {'half': True,
     #             'time_out': 15}
     # cpu_overload(**settings)
     # memeater()
     # memeater_v2(unit='gb', multiplier=1, iteration=2, time_out=20)
+
     # generate_large_file()
     # copy(unit='mb', multiplier=4)
-    # ddot(iterations=5)
+    ddot(iterations=5)
+
