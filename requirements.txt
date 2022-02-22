@@ -1,0 +1,11 @@
+flask-restful
+flask_restful_swagger
+markupsafe==2.0.1 # bug in markupsafe
+redis
+rq
+py-cpuinfo
+numpy
+scipy
+pyyaml
+pygrok
+psutil
